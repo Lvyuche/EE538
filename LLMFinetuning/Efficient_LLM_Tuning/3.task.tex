@@ -1,0 +1,69 @@
+\section{Phase 1: Preliminary Study}
+
+Complete all questions in Sections 2 and 3, and upload your answers as a PDF document named \code{phase\_1} to GitHub. It's strongly advised to complete this phase as soon as possible to allow enough time for the subsequent phases.
+
+
+
+\section{Phase 2: LLaMA2 Model Inference}
+In this phase, we focus on understanding how the LLaMA2 7B model generates text and making specific changes to its code. Our goal is to remove the parts of the code that deal with KV-caching. The LLaMA2 7B model and its tokenizer are located at the directory \code{project/saifhash\_1190/llama2-7b} on the CARC system.
+
+Guidelines: 
+\begin{enumerate}
+\item Understanding the Code Base: Familiarize yourself with the model's architecture, the tokenization process, batch generation, and the decoding mechanism. Utilize debugging tools to inspect values and flow as necessary.
+\item Identifying KV-Caching Features: Look through the code to locate all components and functions related to KV-caching.
+\item Modifying the Code: Carefully remove the KV-caching features from the code. Make sure the model can still generate text without these features.
+\item Testing: After making changes, test the model with sample prompts to ensure it still works correctly.
+\end{enumerate}
+
+Deliverables: Submit a PDF document named \code{phase\_2} containing the details of the changes you've made to the code, along with the prompts and the outputs from testing the generation process.
+
+
+
+
+\section{Phase 3: LLaMA2 Model Training}
+In this phase, your task is to conduct instruction tuning on the LLaMA2 7B model using the (partial) Alpaca dataset, which enhances and expands the capabilities of the LLaMA2 model. By applying all previously discussed optimization techniques, fine-tuning LLMs will become feasible, even on a single GPU. We will avoid using high-level libraries such as HuggingFace, which abstracts away many important details. Instead, we will solely rely on PyTorch's built-in functions. This approach will ensure you gain a comprehensive understanding of the process involved in the instruction tuning of LLMs.
+
+Guidelines:
+\begin{enumerate}
+\item Initial Setup: Begin by instantiating only 1 decoder layer of the LLaMA2 model. Test all your code on a less powerful yet more accessible GPU, the P100 on CARC. This approach prevents out-of-memory errors even before applying optimization techniques. Once you've ensured an end-to-end training process that is bug-free and incorporates all four optimization techniques, you can scale up to the full-size LLaMA2 model, which includes 32 decoder layers, and utilize a more powerful GPU, the A100, with 40GB of RAM, on CARC system.
+\item End-to-End Instruction Tuning Flow: Create a file named \code{finetuning.py}. Implement the end-to-end instruction tuning workflow in PyTorch. For data preprocessing and the creation of supervised data loaders, refer to the \href{https://github.com/tatsu-lab/stanford_alpaca/blob/main/train.py}{official Alpaca repo}.
+\item Training Iteration Loop: Replace the HuggingFace \code{trainer} object used in the Alpaca repo with your own implementation from scratch. To compute loss using PyTorch functions, refer to the \href{https://github.com/huggingface/transformers/blob/dc68a39c8111217683bf49a4912d0c9018bab33d/src/transformers/models/llama/modeling_llama.py#L1056}{HuggingFace's implementation}.
+\item Gradient Accumulation and Mixed Precision Training: Implement gradient accumulation and mixed precision training using PyTorch's AMP package. Refer to the \href{https://pytorch.org/tutorials/recipes/recipes/amp_recipe.html}{AMP Recipe} and \href{https://pytorch.org/docs/stable/notes/amp_examples.html}{AMP Examples} for guidance.
+\item LoRA Linear Layer Module: Implement the LoRA linear layer module by referring to the \href{https://github.com/microsoft/LoRA/blob/3f5c193f431c8a09448f0184f6f883ad393f22d0/loralib/layers.py#L90}{official implementation}. Create a file named \code{lora.py} under the \code{llama/model} path. Convert your model into a PEFT model by replacing the Q and V projection layers in the LLaMA2 model with your LoRA \code{Linear} modules. Freeze all model parameters except for \code{LoRA\_A} and \code{LoRA\_B} and report the percentage of trainable parameters.
+\item Gradient Checkpointing: Utilize PyTorch's \code{torch.utils.checkpoint} API for inserting checkpoints. Decide which layer(s) to apply checkpointing to and describe your approach in the report. Refer to this \href{https://qywu.github.io/2019/05/22/explore-gradient-checkpointing.html}{tutorial} for more information.
+\item Model Fine-Tuning: Apply all the aforementioned techniques to your LLaMA2 7B model and fine-tune it on the \href{https://github.com/tatsu-lab/stanford_alpaca/blob/main/alpaca_data.json}{Alpaca Dataset} using the A100 GPU. To manage time constraints for educational purposes, extract the first 200 samples from the dataset as your training set.
+\item Hyperparameters: Set $learning\_rate=1e-5$, $batch\_size=1$ and $gradient\_accumulation\_step=8$. For LoRA configuration, set $r=16$, $alpha=32$, and $dropout\_rate=0.05$.
+\end{enumerate}
+
+Deliverables: Submit a PDF file named \code{phase\_3} that includes the implementation details you have completed, along with the prompt and the result used to test the fine-tuned model.
+In the same PDF file, provide the following analysis and measurements. For Table \ref{tab:tab1}, fill in the blanks with $\uparrow$ to signify an increase in resource usage, $\downarrow$ for a decrease, or $-$ to indicate no change. For Table \ref{tab:tab2}, measure and report the peak memory usage in MB and the runtime in seconds required to process only 200 training samples on the A100 GPU across each combination of techniques applied in the instruction tuning of the LLaMA2 7B model. If an out-of-memory error happens, then simply mark $\times$ in the blanks. You can turn off gradient checkpointing for this step.
+
+
+\begin{table}[h]
+\centering
+\begin{tabular}{l|l|l|l|l|l}
+\hline
+\multicolumn{1}{l|}{}                       &                 & Grad. Accumulation & Grad. Checkpoint & Mixed Precision & LoRA \\ \hline
+\multicolumn{1}{l|}{\multirow{4}{*}{Memory}}& parameter       &    &    &    &      \\ \cline{2-6} 
+\multicolumn{1}{l|}{}                       & activation      &    &    &    &      \\ \cline{2-6} 
+\multicolumn{1}{l|}{}                       & gradient        &    &    &    &      \\ \cline{2-6} 
+\multicolumn{1}{l|}{}                       & optimizer state &    &    &    &      \\ \hline
+\multicolumn{2}{l|}{Computation}                              &    &    &    &      \\ \hline
+\end{tabular}
+\caption{System performance analysis}
+\label{tab:tab1}
+\end{table}
+
+\begin{table}[h]
+\centering
+\begin{tabular}{l|llll|llll}
+\hline
+GA       & \multicolumn{4}{l|}{OFF}                                                           & \multicolumn{4}{l}{ON}                                                             \\ \hline
+MP       & \multicolumn{2}{l|}{OFF}                           & \multicolumn{2}{l|}{ON}       & \multicolumn{2}{l|}{OFF}                           & \multicolumn{2}{l}{ON}        \\ \hline
+LoRA     & \multicolumn{1}{l|}{OFF} & \multicolumn{1}{l|}{ON} & \multicolumn{1}{l|}{OFF} & ON & \multicolumn{1}{l|}{OFF} & \multicolumn{1}{l|}{ON} & \multicolumn{1}{l|}{OFF} & ON \\ \hline
+Peak Mem & \multicolumn{1}{l|}{}    & \multicolumn{1}{l|}{}   & \multicolumn{1}{l|}{}    &    & \multicolumn{1}{l|}{}    & \multicolumn{1}{l|}{}   & \multicolumn{1}{l|}{}    &    \\ \hline
+Runtime  & \multicolumn{1}{l|}{}    & \multicolumn{1}{l|}{}   & \multicolumn{1}{l|}{}    &    & \multicolumn{1}{l|}{}    & \multicolumn{1}{l|}{}   & \multicolumn{1}{l|}{}    &    \\ \hline
+\end{tabular}
+\caption{System performance measurement}
+\label{tab:tab2}
+\end{table}

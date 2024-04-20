@@ -1,0 +1,71 @@
+\section{Background}
+\label{sec:background}
+
+In this section, your task is to review the LLM survey paper \cite{zhao2023survey} and the LLaMA papers \cite{touvron2023llama, touvron2023llama2} selectively, and provide comprehensive answers to the questions below. These questions will serve as a guide for reading and understanding the content of the papers. You may use Google or ChatGPT to assist in your research, but ensure that your answers are accurate and demonstrate a clear understanding of the concepts discussed in the papers.
+
+\begin{enumerate}
+\item What are the four major aspects of LLMs covered in the LLM survey paper?
+\item What are the three major differences between LLMs and PLMs? What are the three typical emergent abilities for LLMs?
+\item Where are pre-training data from? 
+\item What are the three main types of instruction tuning datasets? What is the Alpaca dataset \cite{alpaca}? Pick a training sample and describe it.
+\item What are the pertaining data used by LLaMA? How many tokens are in the entire training set for training LLaMA?
+\item Before pre-training, what is the procedure for data preprocessing?
+\item What is tokenization? Name a few tokenization algorithms. What is the tokenization method used by LLaMA?
+\item What are the main three types of transformer architecture? Name a few models for each type.
+\item Why are LLMs mainly decoder-only architecture?
+\item What is position embedding? Name a few position embedding algorithms.
+\item What is language modeling? What is the difference between causal language modeling and masked language modeling?
+\item How to generate text from LLMs \cite{generate}? Explain different decoding strategies.
+\item What is instruction tuning, and why is it important?
+\item What is alignment tuning, and why is it important?
+\item What is parameter-efficient fine-tuning, and why is it important? What is the difference between prefix tuning and prompt tuning?
+\item What is prompt engineering, and why is it important? What is zero-shot and few-shot demonstrations?
+\item What is the difference between in-context learning and chain-of-thought prompting?
+\item What are the three basic types of ability evaluation for LLMs? What is perplexity \cite{perplexity}? What is hallucination?
+\item What is human alignment, and why is it important?
+\item Name a few comprehensive evaluation benchmarks for the evaluation of LLMs.
+\end{enumerate}
+
+\textcolor{red}{
+Your answer: \newline
+1. Pre-training, adapation tuning, utilization and capacity evaluation.
+\newline
+2. Three differences between LLMs and PLMs: Emergent abilities, development and usage approach, research and engineering integration. Three typical emergent abilities for LLMs: In-context learning, instruction following, step-by-step reasoning.
+\newline
+3. Pre-training data for LLMs come from massive text corpora collected from internet.These corpora are typically collected from diverse sources across the internet, including websites, books, articles, and other digital text repositories. This wide-ranging collection helps ensure the models learn a broad understanding of language and context.
+\newline
+4. Three main types of instruction tuning datasets: Crowd sourced datasets, expert curated datasets, automatically generated datasets. Alpaca dataset is using as instruction tuning to enhance the performance of LLMs. One example task is the model to categorize a list of fruits into different classes based on given attributes. Which input is the list of fruits and the expected output is organize these fruits into different categories.
+\newline
+5. LLaMA models are trained on a large scale dataset, have been trained using 1.4 trillion tokens.
+\newline
+6. Before pre-training, first we need to gathering data and normalize it, splitting into pieces or tokens, removing the sensitive information and dividing the dataset into training, validation, test sets, finally formatting the data.
+\newline
+7. Tokenization is the process of converting text into smaller units. Example algorithms like word tokenization, subword tokenization and charactor tokenization. Tokenization used in LLaMA for variety of languages and scripts by subword tokenization method.
+\newline
+8. Main three types of transformer architecture are encoder-only transformers, decoder-only transformers and encoder-decoder transformers. Examples for encoder-only like, BERT which is designed for pre-trained deep bidirectional representations, DistilBERT which is a smaller and faster version of BERT. Examples for decoder-only like, GPT which is a generative pre-trained transformer. Example for encoder-decoder like, T5 which is a text-to text transfer transformer to frames all NLP tasks as text to text problem and BART which combines BERT and GPT to understand and the generate text.
+\newline
+9. One reason is because the decoder-only models have a simplified architecture which can reducing complexity and easier to train. Another reason is because decoder-only architectures can scaled up with more parameters which can generate more complex text output as we want.
+\newline
+10. Position embedding is a technique used to incorporate information about absolute position of tokens in the input. Example algorithms like leaned position embedding and relative position embedding.
+\newline
+11. Language modeling is a task in natural language processing to predicting the probability distribution of words. CLM uses a one-directional context to predict the next word in sequence while MLM leverages a bidirectional context to predict a word in sequence.
+\newline
+12. First choose the word with the highest probability at each step and then consider the multiple high probability word in sequence and finally introduce randomness into generation process to make outputs more diverse. For greedy search is quick but can lead to repetitive text, for beam search can maintains high probability sequences and for random sampling can introduce randomness.
+\newline
+13. Instruction tuning is a method to refine the performance of language models. It is important because it can enable the model to understand and execute complex instructions to enhance its applicability across diverse real world applications.
+\newline
+14. Alignment tuning is a specialized approach to adapting language models to better align their responses with human intentions. It is important because it can enhancing the safety and societal acceptance of AI systems which can help the model behave responsible.
+\newline
+15. Parameter-efficient fine-tuning is a technique to keep the parameters of pre-trained model fixed. It is important because it allows large modifications with minimal computational resources, make it easier to adapt large models. Prefix tuning adds trainable parameters to the input while prompt tuning prepended to the input sequence to steer the responses of model to the desired outcome.
+\newline
+16. Prompt engineering is to guild the behavior of language models to produce desired outputs. It is important because it maximized the efficiency of models without extensive retraining. Zero-shot is the model performs a task without any prior examples and few-shot is the model given a few examples to demonstrate the task before asked.
+\newline
+17. In-context learning is how the model to understand and respond a task based on the provided context. Chain-of-thought prompting is the process of intermediate reasoning in prompt and guiding the model to follow the logical sequence to the conclusion.
+\newline
+18. Human alignment is the process of ensuring the AI system behave with human values, ethics and intentions. It is important because it reduce the risks of AI behaviors which might harmful for human.
+\newline
+19. Three basic types of ability evaluation for LLMs are performance specialization, generalization of abilities and behavioral tests. Perplexity is a metric that used to evaluate language models like GPT-2. Hallucination is the way to instance which model generates the text that is ungrounded to the input data.
+\newline
+20. Examples like GLUE, general language understanding evaluation which is a collection of nine different tasks designed to measure a model’s ability to understand language. SQuAD, standford question answering dataset which focusing on the ability of answering questions based on give text. 
+\newline
+}
