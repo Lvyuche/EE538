@@ -15,9 +15,9 @@ from llama.generation import Generation
 @dataclass
 class ModelArgs:
     dim: int = 4096
-    n_layers: int = 32
-    n_heads: int = 32
-    n_kv_heads: Optional[int] = None
+    n_layers: int = 32 # number of times that block repeast
+    n_heads: int = 32 # number of heads for the queries
+    n_kv_heads: Optional[int] = None # number of heads for the K and V
     vocab_size: int = 32000  
     multiple_of: int = 256  # make SwiGLU hidden layer size multiple of large power of 2
     ffn_dim_multiplier: Optional[float] = None
@@ -186,10 +186,13 @@ class Attention(nn.Module):
 
         """
         super().__init__()
+        # Number of heads for the Key and Values
         self.n_kv_heads = args.n_heads if args.n_kv_heads is None else args.n_kv_heads
         self.n_local_heads = args.n_heads
         self.n_local_kv_heads = self.n_kv_heads
+        # Number of times KV should be repeated to match the head of the Queries
         self.n_rep = self.n_local_heads // self.n_local_kv_heads
+        # Dimension of each head
         self.head_dim = args.dim // args.n_heads
 
         self.wq = nn.Linear(args.dim, args.n_heads * self.head_dim, bias=False)
@@ -197,22 +200,23 @@ class Attention(nn.Module):
         self.wv = nn.Linear(args.dim, self.n_kv_heads * self.head_dim, bias=False)
         self.wo = nn.Linear(args.n_heads * self.head_dim, args.dim, bias=False)
 
-        self.cache_k = torch.zeros(
-            (
-                args.max_batch_size,
-                args.max_seq_len,
-                self.n_local_kv_heads,
-                self.head_dim,
-            )
-        ).cuda()
-        self.cache_v = torch.zeros(
-            (
-                args.max_batch_size,
-                args.max_seq_len,
-                self.n_local_kv_heads,
-                self.head_dim,
-            )
-        ).cuda()
+        # # Modified part
+        # self.cache_k = torch.zeros(
+        #     (
+        #         args.max_batch_size,
+        #         args.max_seq_len,
+        #         self.n_local_kv_heads,
+        #         self.head_dim,
+        #     )
+        # ).cuda()
+        # self.cache_v = torch.zeros(
+        #     (
+        #         args.max_batch_size,
+        #         args.max_seq_len,
+        #         self.n_local_kv_heads,
+        #         self.head_dim,
+        #     )
+        # ).cuda()
 
     def forward(
         self,
@@ -234,27 +238,38 @@ class Attention(nn.Module):
             torch.Tensor: Output tensor after attention.
 
         """
+        # (B, 1 , Dim)
         bsz, seqlen, _ = x.shape
+        # (B, 1 , Dim) -> (B, 1 , H_Q * Head_Dim) or (B, 1 , H_KV * Head_Dim)
         xq, xk, xv = self.wq(x), self.wk(x), self.wv(x)
 
+        # (B, 1 , H_Q * Head_Dim) -> (B, 1 , H_Q, Head_Dim)
         xq = xq.view(bsz, seqlen, self.n_local_heads, self.head_dim)
+        # (B, 1 , H_KV * Head_Dim) -> (B, 1 , H_KV, Head_Dim)
         xk = xk.view(bsz, seqlen, self.n_local_kv_heads, self.head_dim)
         xv = xv.view(bsz, seqlen, self.n_local_kv_heads, self.head_dim)
 
+        # Does not change the shape
         xq, xk = apply_rotary_emb(xq, xk, freqs_cis=freqs_cis)
 
-        self.cache_k = self.cache_k.to(xq)
-        self.cache_v = self.cache_v.to(xq)
+        # # Modified part
+        # self.cache_k = self.cache_k.to(xq)
+        # self.cache_v = self.cache_v.to(xq)
 
-        self.cache_k[:bsz, start_pos : start_pos + seqlen] = xk
-        self.cache_v[:bsz, start_pos : start_pos + seqlen] = xv
+        # self.cache_k[:bsz, start_pos : start_pos + seqlen] = xk
+        # self.cache_v[:bsz, start_pos : start_pos + seqlen] = xv
 
-        keys = self.cache_k[:bsz, : start_pos + seqlen]
-        values = self.cache_v[:bsz, : start_pos + seqlen]
+        # # (B, seqlen, H_KV, Head_Dim)
+        # keys = self.cache_k[:bsz, : start_pos + seqlen]
+        # values = self.cache_v[:bsz, : start_pos + seqlen]
 
-        # repeat k/v heads if n_kv_heads < n_heads
-        keys = repeat_kv(keys, self.n_rep)  # (bs, cache_len + seqlen, n_local_heads, head_dim)
-        values = repeat_kv(values, self.n_rep)  # (bs, cache_len + seqlen, n_local_heads, head_dim)
+        # # repeat k/v heads if n_kv_heads < n_heads
+        # keys = repeat_kv(keys, self.n_rep)  # (bs, cache_len + seqlen, n_local_heads, head_dim)
+        # values = repeat_kv(values, self.n_rep)  # (bs, cache_len + seqlen, n_local_heads, head_dim)
+
+        # Modified part
+        keys = repeat_kv(xk, self.n_rep)  # (bs, cache_len + seqlen, n_local_heads, head_dim)
+        values = repeat_kv(xv, self.n_rep)  # (bs, cache_len + seqlen, n_local_heads, head_dim)
 
         xq = xq.transpose(1, 2)  # (bs, n_local_heads, seqlen, head_dim)
         keys = keys.transpose(1, 2) # (bs, n_local_heads, cache_len + seqlen, head_dim)

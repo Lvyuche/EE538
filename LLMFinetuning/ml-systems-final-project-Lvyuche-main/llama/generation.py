@@ -4,6 +4,7 @@ from torch import nn
 
 class Generation(nn.Module):
     def generate(self, tokenizer, prompts, max_gen_len, temperature, top_p):
+        # convert each prompt into tokens
         prompt_tokens = [tokenizer.encode(x, bos=True, eos=False) for x in prompts]
 
         bsz = len(prompt_tokens)
@@ -39,7 +40,8 @@ class Generation(nn.Module):
                 next_token == tokenizer.eos_id
             )
  
-            prev_pos = cur_pos
+            # # Modified part
+            # prev_pos = cur_pos
             if all(eos_reached):
                 break
 
