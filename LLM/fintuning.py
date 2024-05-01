@@ -156,6 +156,9 @@ def train():
     optimizer = torch.optim.AdamW(model.parameters(), lr=1e-5)
     criterion = torch.nn.CrossEntropyLoss(ignore_index=IGNORE_INDEX)
 
+    use_amp = True
+    scaler = torch.cuda.amp.GradScaler(enabled=use_amp)
+
     accumulation_steps = 2
     accumulation_counter = 0
 
@@ -167,27 +170,32 @@ def train():
             labels = batch['labels'].to("cuda")
             # print(input_ids.shape)
 
-            logits = model(input_ids)
-            # print(logits.shape)
+            with torch.autocast(device_type="cuda", dtype=torch.float16, enabled=use_amp):
 
-            shift_logits = logits[..., :-1, :].contiguous()
-            shift_labels = labels[..., 1:].contiguous()
-            shift_logits = shift_logits.view(-1, 32000)
-            shift_labels = shift_labels.view(-1)
-            loss = criterion(shift_logits, shift_labels)
+                logits = model(input_ids)
+                # print(logits.shape)
+
+                shift_logits = logits[..., :-1, :].contiguous()
+                shift_labels = labels[..., 1:].contiguous()
+                shift_logits = shift_logits.view(-1, 32000)
+                shift_labels = shift_labels.view(-1)
+                loss = criterion(shift_logits, shift_labels)
             loss = loss / accumulation_steps
-            loss.backward()
+            scaler.scale(loss).backward()
             
             accumulation_counter += 1
             if accumulation_counter % accumulation_steps == 0:
                 # print(loss.item())
-                optimizer.step()
+                scaler.step(optimizer)
+                scaler.update()
                 optimizer.zero_grad()
 
         if accumulation_counter % accumulation_steps != 0:
+            scaler.step(optimizer)
+            scaler.update()
             optimizer.step()
             optimizer.zero_grad()
-    
+
     print("Training Finished!")
     duration = time.time() - start_time
     print(f"optimizer.step() took {duration:.4f} seconds")
