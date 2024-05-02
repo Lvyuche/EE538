@@ -11,6 +11,8 @@ from torch import nn
 
 from llama.generation import Generation
 
+from lora import Linear as loraLinearLayer
+
 
 @dataclass
 class ModelArgs:
@@ -195,8 +197,12 @@ class Attention(nn.Module):
         # Dimension of each head
         self.head_dim = args.dim // args.n_heads
 
-        self.wq = nn.Linear(args.dim, args.n_heads * self.head_dim, bias=False)
-        self.wk = nn.Linear(args.dim, self.n_kv_heads * self.head_dim, bias=False)
+        # Before LoRA
+        # self.wq = nn.Linear(args.dim, args.n_heads * self.head_dim, bias=False)
+        # self.wk = nn.Linear(args.dim, self.n_kv_heads * self.head_dim, bias=False)
+        # After LoRA
+        self.wq = loraLinearLayer(args.dim, args.n_heads * self.head_dim, bias=False)
+        self.wk = loraLinearLayer(args.dim, self.n_kv_heads * self.head_dim, bias=False)
         self.wv = nn.Linear(args.dim, self.n_kv_heads * self.head_dim, bias=False)
         self.wo = nn.Linear(args.n_heads * self.head_dim, args.dim, bias=False)
 
@@ -221,7 +227,7 @@ class Attention(nn.Module):
     def forward(
         self,
         x: torch.Tensor,
-        # start_pos: int,
+        start_pos: int,
         freqs_cis: torch.Tensor,
         mask: Optional[torch.Tensor],
     ):
@@ -358,7 +364,7 @@ class TransformerBlock(nn.Module):
     def forward(
         self,
         x: torch.Tensor,
-        # start_pos: int,
+        start_pos: int,
         freqs_cis: torch.Tensor,
         mask: Optional[torch.Tensor],
     ):
@@ -375,14 +381,10 @@ class TransformerBlock(nn.Module):
             torch.Tensor: Output tensor after applying attention and feedforward layers.
 
         """
-        # Modified part
-        # h = x + self.attention.forward(
-        #     self.attention_norm(x), start_pos, freqs_cis, mask
-        # )
-
         h = x + self.attention.forward(
-            self.attention_norm(x), freqs_cis, mask
+            self.attention_norm(x), start_pos, freqs_cis, mask
         )
+
         out = h + self.feed_forward.forward(self.ffn_norm(h))
         return out
 
@@ -461,9 +463,7 @@ class Llama(Generation):
             ]).type_as(h)
 
         for layer in self.layers:
-            # Modified part
-            # h = layer(h, start_pos, freqs_cis, mask)
-            h = layer(h, freqs_cis, mask)
+            h = layer(h, start_pos, freqs_cis, mask)
         h = self.norm(h)
         output = self.output(h).float()
         return output

@@ -138,11 +138,11 @@ def train():
     )
     
     # Freeze model parameters other than lora weights
-    # for name, params in model.named_parameters():
-    #     if "lora_" in name:
-    #         params.requires_grad = True
-    #     else:
-    #         params.requires_grad = False
+    for name, params in model.named_parameters():
+        if "lora" in name:
+            params.requires_grad = True
+        else:
+            params.requires_grad = False
     
     trainable_params = sum(p.numel() for p in model.parameters() if p.requires_grad)
     all_params = sum(p.numel() for p in model.parameters())
@@ -159,7 +159,7 @@ def train():
     use_amp = True
     scaler = torch.cuda.amp.GradScaler(enabled=use_amp)
 
-    accumulation_steps = 2
+    accumulation_steps = 8
     accumulation_counter = 0
 
     start_time = time.time()
@@ -171,7 +171,6 @@ def train():
             # print(input_ids.shape)
 
             with torch.autocast(device_type="cuda", dtype=torch.float16, enabled=use_amp):
-
                 logits = model(input_ids)
                 # print(logits.shape)
 
@@ -189,16 +188,17 @@ def train():
                 scaler.step(optimizer)
                 scaler.update()
                 optimizer.zero_grad()
-
+        # incase there still some gradient haven't been stepped
         if accumulation_counter % accumulation_steps != 0:
             scaler.step(optimizer)
             scaler.update()
-            optimizer.step()
             optimizer.zero_grad()
 
     print("Training Finished!")
     duration = time.time() - start_time
     print(f"optimizer.step() took {duration:.4f} seconds")
+    peak_allocated = torch.cuda.max_memory_allocated()
+    print(f"Peak allocated memory: {peak_allocated / 1024**3:.2f} GB")
 
 
 if __name__ == "__main__":
