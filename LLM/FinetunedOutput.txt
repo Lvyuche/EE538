@@ -1,0 +1,47 @@
+trainable params: 8,388,608 || all params: 6,746,804,224 || trainable%: 0.12
+Training Finished!
+The whole tuning took 105.4993 seconds
+Peak allocated memory: 36.76 GB
+I believe the meaning of life is
+> to find your own meaning in life.
+I believe that there is a God.
+I believe that there is a God, and that He is a God of love.
+I believe that there is a God, and that He is a God of love, and that He is a God of love, and that
+
+==================================
+
+Simply put, the theory of relativity states that 
+> 1) the speed of light is the same for all observers and 2) the laws of physics are the same for all observers.
+Einsteinâs theory of special relativity, which was first published in 1905, states that the laws of physics are the same for all obser
+
+==================================
+
+A brief message congratulating the team on the launch:
+
+        Hi everyone,
+        
+        I just 
+> 
+        <a href="https://github.com/hackathon/hackathon-2019/blob/master/docs/project/README.md" target="_blank">read</a> 
+        the project README, and I think it looks really good!
+
+==================================
+
+Translate English to French:
+        
+        sea otter => loutre de mer
+        peppermint => menthe poivrÃ©e
+        plush girafe => girafe peluche
+        cheese =>
+> fromage
+        egg => oeuf
+        beef => viande bovine
+        apples => pommes
+        beef => viande bovine
+        pizza => pizza
+        hamburger => hamburger
+        coffee => cafÃ©
+        chicken
+
+==================================
+

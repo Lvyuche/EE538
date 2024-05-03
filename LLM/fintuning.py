@@ -10,6 +10,7 @@ from llama.tokenizer import Tokenizer
 from llama.model import ModelArgs, Llama
 
 import time
+from inference import inference
 
 IGNORE_INDEX = -100
 
@@ -119,7 +120,7 @@ def train():
     # load model
     checkpoint = torch.load(model_path, map_location="cpu")
     model_args = ModelArgs()
-    model_args.n_layers = 1  # for debugging purposes we only use 1 layer
+    model_args.n_layers = 32  # for debugging purposes we only use 1 layer
     # torch.set_default_tensor_type(torch.cuda.HalfTensor) # for training we use fp32 weights
     model = Llama(model_args)
     model.load_state_dict(checkpoint, strict=False)
@@ -196,10 +197,14 @@ def train():
 
     print("Training Finished!")
     duration = time.time() - start_time
-    print(f"optimizer.step() took {duration:.4f} seconds")
+    print(f"The whole tuning took {duration:.4f} seconds")
     peak_allocated = torch.cuda.max_memory_allocated()
     print(f"Peak allocated memory: {peak_allocated / 1024**3:.2f} GB")
+    # stats = torch.cuda.memory_stats(device='cuda')
+    # peak_bytes_usage = stats['allocated_bytes.all.peak']
+    # print(f"Peak memory usage: {peak_bytes_usage} bytes")
 
 
 if __name__ == "__main__":
     train()
+    inference()

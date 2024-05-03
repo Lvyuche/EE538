@@ -11,7 +11,8 @@ from torch import nn
 
 from llama.generation import Generation
 
-from lora import Linear as loraLinearLayer
+from llama.lora import Linear as loraLinearLayer
+from torch.utils.checkpoint import checkpoint
 
 
 @dataclass
@@ -462,8 +463,11 @@ class Llama(Generation):
                 mask
             ]).type_as(h)
 
+        place_checkpoint = 0
         for layer in self.layers:
-            h = layer(h, start_pos, freqs_cis, mask)
+            args = (h, start_pos, freqs_cis, mask)
+            h = checkpoint(layer, *args, use_reentrant=True) if place_checkpoint % 4 == 1 else layer(h, start_pos, freqs_cis, mask)
+            place_checkpoint += 1
         h = self.norm(h)
         output = self.output(h).float()
         return output
