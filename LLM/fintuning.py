@@ -189,7 +189,7 @@ def train():
                 scaler.step(optimizer)
                 scaler.update()
                 optimizer.zero_grad()
-        # incase there still some gradient haven't been stepped
+        # in case there still some gradient haven't been stepped
         if accumulation_counter % accumulation_steps != 0:
             scaler.step(optimizer)
             scaler.update()
